@@ -96,4 +96,47 @@ class ParseTreeBuilderTest {
         Assert.assertEquals(ParseStackEntry(secondRuleSet,parseTreeNode), nextParseStack.top())
         Assert.assertEquals(0, nextInputStack.count())
     }
+
+    @Test
+    fun buildShouldReturnTheParseStackIfInputStackIsEmptyAndParseStackHasOnlyOneItem(){
+        val parseStack = ParseStack(listOf(
+            Transition(firstRuleSet),
+            Transition(secondRuleSet)
+        ), listOf(ParseStackEntry(firstRuleSet, ParseTreeNode.TerminalNode(Symbol.Terminal("x"), "0"))))
+
+        val inputStack:List<ParseTreeNode> = emptyList()
+
+        Assert.assertEquals(parseStack, parseStack.build(ParseStack::process)(inputStack))
+    }
+
+    @Test
+    fun buildShouldProcessTheInputStackAndThenBuildWithNewParseAndInputStack(){
+        val inputParseStack = ParseStack(listOf(
+            Transition(firstRuleSet),
+            Transition(secondRuleSet)
+        ), listOf(ParseStackEntry(firstRuleSet, ParseTreeNode.TerminalNode(Symbol.Terminal("x"), "0"))))
+
+        val intermediateParseStack = ParseStack(listOf(
+            Transition(firstRuleSet),
+            Transition(secondRuleSet)
+        ), listOf(ParseStackEntry(firstRuleSet, ParseTreeNode.TerminalNode(Symbol.Terminal("x"), "1"))))
+
+        val finalParseStack = ParseStack(listOf(
+            Transition(firstRuleSet),
+            Transition(secondRuleSet)
+        ), listOf(ParseStackEntry(secondRuleSet, ParseTreeNode.TerminalNode(Symbol.Terminal("x"), "1"))))
+
+        val parseTreeNode = ParseTreeNode.TerminalNode(Symbol.Terminal("x"), "1")
+        val inputStack:List<ParseTreeNode> = listOf(parseTreeNode)
+
+        val mockProcessFunction:ParseStack.(List<ParseTreeNode>) -> Pair<ParseStack, List<ParseTreeNode>> = { inputStack ->
+            when{
+                this == inputParseStack && inputStack.count() == 1 -> Pair(intermediateParseStack, inputStack)
+                this == intermediateParseStack && inputStack.count() == 1 -> Pair(finalParseStack, emptyList())
+                else -> Pair(intermediateParseStack, inputStack)
+            }
+        }
+
+        Assert.assertEquals(finalParseStack, inputParseStack.build(mockProcessFunction)(inputStack))
+    }
 }

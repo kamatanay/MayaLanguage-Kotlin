@@ -53,3 +53,14 @@ fun ParseStack.process(inputStack:List<ParseTreeNode>):Pair<ParseStack, List<Par
         else -> Pair(this, inputStack)
     }
 }
+
+fun ParseStack.build(processFunction:ParseStack.(List<ParseTreeNode>) -> Pair<ParseStack, List<ParseTreeNode>>):(List<ParseTreeNode>) -> ParseStack{
+    return { inputStack: List<ParseTreeNode> ->
+        if (inputStack.count() == 0 && this.count() == 1){
+            this
+        } else {
+            val (newParseStack, newInputStack) =  processFunction(this, inputStack)
+            newParseStack.build(processFunction)(newInputStack)
+        }
+    }
+}
